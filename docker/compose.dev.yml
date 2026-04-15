@@ -18,7 +18,7 @@ services:
     command: sh -c "npx prisma db push && npm run dev"
     depends_on:
       db:
-        condition: service_started
+        condition: service_healthy
     restart: unless-stopped
 
   db:
@@ -32,6 +32,11 @@ services:
       - '5432:5432'
     volumes:
       - boxshop_pgdata_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d boxshop_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     restart: unless-stopped
 
 volumes:
