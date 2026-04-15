@@ -1,0 +1,29 @@
+version: '3.8'
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: box-shop-web
+    ports:
+      - '3000:3000'
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://admin:admin_password@db:5432/boxshop_prod
+    depends_on:
+      - db
+    restart: always
+
+  db:
+    image: postgres:15-alpine
+    container_name: box-shop-db-prod
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin_password
+      POSTGRES_DB: boxshop_prod
+    volumes:
+      - boxshop_pgdata_prod:/var/lib/postgresql/data
+    restart: always
+
+volumes:
+  boxshop_pgdata_prod:
