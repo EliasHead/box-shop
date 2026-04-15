@@ -15,7 +15,7 @@ services:
     environment:
       - NODE_ENV=development
       - DATABASE_URL=postgresql://admin:admin_password@db:5432/boxshop_dev
-    command: sh -c "npm install && npm run dev"
+    command: sh -c "npx prisma db push && npm run dev"
     depends_on:
       db:
         condition: service_started
