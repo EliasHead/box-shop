@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { auth } from '@/auth'
 
 export const config = {
   matcher: [
@@ -39,6 +40,21 @@ export default async function middleware(req: NextRequest) {
 
   // rewrites for app pages
   if (hostname === 'app.' + process.env.NEXT_PUBLIC_ROOT_DOMAIN) {
+    const session = await auth()
+    
+    // Allow access to login page
+    if (path === '/login') {
+      if (session) {
+        return NextResponse.redirect(new URL('http://app.' + process.env.NEXT_PUBLIC_ROOT_DOMAIN))
+      }
+      return NextResponse.rewrite(new URL(`/app/login`, req.url))
+    }
+    
+    // If not logged in and trying to access anything else on app.*
+    if (!session) {
+      return NextResponse.redirect(new URL(`http://app.${process.env.NEXT_PUBLIC_ROOT_DOMAIN}/login`))
+    }
+
     return NextResponse.rewrite(
       new URL(`/app${path === '/' ? '' : path}`, req.url)
     )

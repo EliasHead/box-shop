@@ -1,40 +1,70 @@
 import NextAuth from "next-auth"
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import { prisma } from "@/lib/prisma"
+import bcrypt from "bcryptjs"
 
 // Providers
 import CredentialsProvider from "next-auth/providers/credentials"
 
+export async function authorizeUser(credentials: Partial<Record<string, unknown>>) {
+  if (!credentials?.email || !credentials?.password) {
+    return null
+  }
+  
+  const user = await prisma.user.findUnique({
+    where: { email: credentials.email as string }
+  })
+
+  if (!user || !user.password) {
+    return null
+  }
+
+  const isPasswordValid = await bcrypt.compare(
+    credentials.password as string,
+    user.password
+  )
+
+  if (!isPasswordValid) {
+    return null
+  }
+
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    tenantId: user.tenantId
+  }
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
+  pages: {
+    signIn: "/app/login",
+  },
   providers: [
     CredentialsProvider({
-      name: "POC Admin",
+      name: "Credentials",
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" }
       },
-      async authorize(credentials) {
-        // Mock implementation for the POC
-        // In reality, this should check the DB and compare hashes
-        if (credentials?.email === "admin@boxshop.com" && credentials?.password === "admin") {
-          return { id: "1", name: "Admin", email: "admin@boxshop.com", role: "ADMIN" }
-        }
-        return null
-      }
+      authorize: authorizeUser
     }),
   ],
   callbacks: {
     jwt({ token, user }) {
       if (user) {
         token.role = user.role
+        token.tenantId = user.tenantId
       }
       return token
     },
     session({ session, token }) {
-      if (session.user && token.role) {
-        session.user.role = token.role
+      if (session.user) {
+        session.user.role = token.role as string
+        session.user.tenantId = token.tenantId as string | null
       }
       return session
     }
