@@ -7,6 +7,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet'
 import { ReactNode } from 'react'
+import { logout } from '@/lib/actions/auth'
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Visão Geral' },
@@ -41,10 +42,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             </nav>
           </div>
           <div className="mt-auto p-4">
-            <Button variant="outline" className="w-full justify-start gap-2">
-              <LogOut className="h-4 w-4" />
-              Sair
-            </Button>
+            <form action={logout}>
+              <Button type="submit" variant="outline" className="w-full justify-start gap-2">
+                <LogOut className="h-4 w-4" />
+                Sair
+              </Button>
+            </form>
           </div>
         </div>
       </div>
@@ -81,10 +84,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 ))}
               </nav>
               <div className="mt-auto">
-                <Button variant="outline" className="w-full justify-start gap-2">
-                  <LogOut className="h-4 w-4" />
-                  Sair
-                </Button>
+                <form action={logout}>
+                  <Button type="submit" variant="outline" className="w-full justify-start gap-2">
+                    <LogOut className="h-4 w-4" />
+                    Sair
+                  </Button>
+                </form>
               </div>
             </SheetContent>
           </Sheet>
