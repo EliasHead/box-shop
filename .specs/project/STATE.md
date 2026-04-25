@@ -4,9 +4,11 @@
 
 ## Current Status
 **Última Atualização:** 25 de Abril de 2026
-**Fase Atual:** Finalizando a Fase 1 (Autenticação e Testes) e prontos para iniciar a Fase 2 (Multi-Tenant Core).
+**Fase Atual:** Na Fase 2 (Multi-Tenant Core). Onboarding de criação de loja e associação de tenant concluídos.
 
 ## Decisions
+- **Atualização de Sessão JWT (Auth.js v5):** Para refletir o novo `tenantId` imediatamente após a criação da loja sem relogar, usamos o callback `jwt` com `trigger === "update"`. Foi necessário injetar explicitamente o `session.user.id = token.sub` no callback de `session` para que as Server Actions tivessem acesso ao ID do banco de dados na sessão do usuário.
+- **Onboarding Guard no Middleware:** Requisições para rotas sob `app.` redirecionam automaticamente usuários logados sem tenant para a rota `/onboarding`.
 - **Logout via Server Actions:** Implementação do botão de logout utilizando Server Actions (`src/lib/actions/auth.ts`) e formulários, permitindo manter o layout da aplicação (`src/app/app/layout.tsx`) como Server Components, o que melhora a performance e evita a necessidade de `"use client"`.
 - **Arquitetura Auth Separada:** Para compatibilidade com Edge Runtime (Middleware), separamos o `auth.ts` (Prisma/Node.js) do `auth.config.ts` (Lógico/Edge-safe). Isso permite usar sessões no middleware sem importar o Prisma.
 - **Prisma v7 + Driver Adapter:** Adotamos o padrão de Driver Adapter (`@prisma/adapter-pg` + `pg`) no Prisma v7 para conexões PostgreSQL diretas, pois a `url` no `schema.prisma` não é mais suportada em runtime.

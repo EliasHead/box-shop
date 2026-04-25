@@ -59,6 +59,15 @@ export default auth((req) => {
       return NextResponse.redirect(new URL(`http://app.${process.env.NEXT_PUBLIC_ROOT_DOMAIN}/login`))
     }
 
+    // Onboarding routing guards
+    const hasTenant = !!session.user?.tenantId
+    if (!hasTenant && path !== '/onboarding') {
+      return NextResponse.redirect(new URL(`http://app.${process.env.NEXT_PUBLIC_ROOT_DOMAIN}/onboarding`))
+    }
+    if (hasTenant && path === '/onboarding') {
+      return NextResponse.redirect(new URL(`http://app.${process.env.NEXT_PUBLIC_ROOT_DOMAIN}/dashboard`))
+    }
+
     return NextResponse.rewrite(
       new URL(`/app${path === '/' ? '' : path}`, req.url)
     )

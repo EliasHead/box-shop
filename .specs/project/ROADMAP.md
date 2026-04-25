@@ -8,8 +8,8 @@
 - [x] Suíte de Testes base implementada (Vitest + NextAuth Mock).
 
 ## Phase 2: Multi-Tenant Core (🟡 Próximo)
-- [ ] CRUD de Tenants (Criação e Gestão de Lojas).
-- [ ] Associação Automática Usuário ↔ Tenant.
+- [x] CRUD de Tenants (Criação e Gestão de Lojas).
+- [x] Associação Automática Usuário ↔ Tenant.
 - [ ] Resolução Dinâmica de Rotas de Lojas (Subdomínios).
 - [ ] Criação do layout principal do Dashboard pós-login.
 
