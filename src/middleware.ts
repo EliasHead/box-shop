@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
-import { auth } from '@/auth'
+import NextAuth from 'next-auth'
+import { authConfig } from '@/auth.config'
+
+const { auth } = NextAuth(authConfig)
 
 export const config = {
   matcher: [
@@ -15,7 +17,7 @@ export const config = {
   ],
 }
 
-export default async function middleware(req: NextRequest) {
+export default auth((req) => {
   const url = req.nextUrl
   
   // Get hostname of request (e.g. demo.boxshop.com, demo.localhost:3000)
@@ -39,8 +41,10 @@ export default async function middleware(req: NextRequest) {
   }`
 
   // rewrites for app pages
-  if (hostname === 'app.' + process.env.NEXT_PUBLIC_ROOT_DOMAIN) {
-    const session = await auth()
+  const targetAppDomain = 'app.' + (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'localhost:3000')
+  
+  if (hostname === targetAppDomain) {
+    const session = req.auth
     
     // Allow access to login page
     if (path === '/login') {
@@ -70,4 +74,4 @@ export default async function middleware(req: NextRequest) {
 
   // rewrite everything else to `/[domain]/[slug]` dynamic route
   return NextResponse.rewrite(new URL(`/${hostname}${path}`, req.url))
-}
+})
