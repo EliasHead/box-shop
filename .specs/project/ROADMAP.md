@@ -14,7 +14,7 @@
 - [x] Criação do layout principal do Dashboard pós-login.
 
 ## Phase 3: Store Management (🟡 Próximo)
-- [ ] Gestão de Produtos e Categorias (focada no Tenant atual).
+- [x] Gestão de Produtos e Categorias (focada no Tenant atual).
 - [ ] Gestão de Estoque e Variações.
 - [ ] Upload de Imagens/Mídia.
 

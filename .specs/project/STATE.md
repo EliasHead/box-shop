@@ -4,7 +4,7 @@
 
 ## Current Status
 **Última Atualização:** 26 de Abril de 2026
-**Fase Atual:** Fase 2 (Multi-Tenant Core) concluída! Iniciando a Fase 3 (Store Management) com foco na Gestão de Produtos e Categorias.
+**Fase Atual:** Fase 3 (Store Management) em andamento. Gestão de Produtos e Categorias (focada no Tenant atual) implementada.
 
 ## Decisions
 - **Domain Guard no Middleware:** Implementamos um redirecionamento automático para caminhos administrativos (`/dashboard`, `/onboarding`, `/login`) que sejam acessados a partir de subdomínios de lojistas, garantindo que a gestão da plataforma ocorra centralizadamente no subdomínio `app.`.
@@ -13,6 +13,10 @@
 - **Logout via Server Actions:** Implementação do botão de logout utilizando Server Actions (`src/lib/actions/auth.ts`) e formulários, permitindo manter o layout da aplicação (`src/app/app/layout.tsx`) como Server Components, o que melhora a performance e evita a necessidade de `"use client"`.
 - **Arquitetura Auth Separada:** Para compatibilidade com Edge Runtime (Middleware), separamos o `auth.ts` (Prisma/Node.js) do `auth.config.ts` (Lógico/Edge-safe). Isso permite usar sessões no middleware sem importar o Prisma.
 - **Prisma v7 + Driver Adapter:** Adotamos o padrão de Driver Adapter (`@prisma/adapter-pg` + `pg`) no Prisma v7 para conexões PostgreSQL diretas, pois a `url` no `schema.prisma` não é mais suportada em runtime.
+- **Relação Produto-Categoria (1:N):** Decidido que cada produto pertencerá a no máximo uma categoria nesta fase inicial, para simplificar.
+- **Deleção Set Null:** Ao apagar uma categoria, os produtos vinculados a ela não são apagados em cascata, mas o `categoryId` é definido como `null` para preservar o histórico do produto.
+- **Next.js Server Actions para CRUD:** Utilizamos mutações em server actions com `revalidatePath` para atualizar a UI do Dashboard em tempo real sem expor APIs.
+- **Isolamento via Zod & Prisma:** Cada ação valida os dados e a associação correta com o `tenantId` logado para evitar acesso indevido.
 - **Next.js 16 + Turbopack:** O projeto utiliza Next.js 16 com Turbopack. Configuramos `serverExternalPackages` no `next.config.ts` para evitar que o Turbopack injete stubs de browser/edge em bibliotecas nativas de Node.js como `@prisma/client` e `bcryptjs`.
 
 ## Blockers & Resolved Issues

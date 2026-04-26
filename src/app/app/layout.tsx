@@ -1,4 +1,4 @@
-import { Package, LayoutDashboard, Settings, LogOut, Menu } from 'lucide-react'
+import { Package, LayoutDashboard, Settings, LogOut, Menu, Tags } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import {
@@ -14,6 +14,7 @@ import { prisma } from '@/lib/prisma'
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Visão Geral' },
   { href: '/dashboard/products', icon: Package, label: 'Produtos' },
+  { href: '/dashboard/categories', icon: Tags, label: 'Categorias' },
   { href: '/dashboard/settings', icon: Settings, label: 'Configurações' },
 ]
 
