@@ -7,13 +7,13 @@
 - [x] Middleware de proteção do painel de controle (subdomínio `app.`).
 - [x] Suíte de Testes base implementada (Vitest + NextAuth Mock).
 
-## Phase 2: Multi-Tenant Core (🟡 Próximo)
+## Phase 2: Multi-Tenant Core (🟢 Completo)
 - [x] CRUD de Tenants (Criação e Gestão de Lojas).
 - [x] Associação Automática Usuário ↔ Tenant.
-- [ ] Resolução Dinâmica de Rotas de Lojas (Subdomínios).
+- [x] Resolução Dinâmica de Rotas de Lojas (Subdomínios).
 - [x] Criação do layout principal do Dashboard pós-login.
 
-## Phase 3: Store Management (⚪ Futuro)
+## Phase 3: Store Management (🟡 Próximo)
 - [ ] Gestão de Produtos e Categorias (focada no Tenant atual).
 - [ ] Gestão de Estoque e Variações.
 - [ ] Upload de Imagens/Mídia.
