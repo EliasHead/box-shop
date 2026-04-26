@@ -4,7 +4,7 @@
 
 ## Current Status
 **Última Atualização:** 26 de Abril de 2026
-**Fase Atual:** Na Fase 2 (Multi-Tenant Core). Dashboard pós-login customizado. Foco agora na Resolução Dinâmica de Rotas de Lojas (Storefront).
+**Fase Atual:** Fase 2 (Multi-Tenant Core) concluída! Iniciando a Fase 3 (Store Management) com foco na Gestão de Produtos e Categorias.
 
 ## Decisions
 - **Domain Guard no Middleware:** Implementamos um redirecionamento automático para caminhos administrativos (`/dashboard`, `/onboarding`, `/login`) que sejam acessados a partir de subdomínios de lojistas, garantindo que a gestão da plataforma ocorra centralizadamente no subdomínio `app.`.
