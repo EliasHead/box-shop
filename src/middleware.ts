@@ -43,6 +43,12 @@ export default auth((req) => {
   // rewrites for app pages
   const targetAppDomain = 'app.' + (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'localhost:3000')
   
+  // Redirect app-related paths from tenant domains to the app subdomain
+  const appPaths = ['/dashboard', '/onboarding', '/login']
+  if (appPaths.some(p => path.startsWith(p)) && hostname !== targetAppDomain) {
+    return NextResponse.redirect(new URL(`http://${targetAppDomain}${path}`))
+  }
+
   if (hostname === targetAppDomain) {
     const session = req.auth
     
