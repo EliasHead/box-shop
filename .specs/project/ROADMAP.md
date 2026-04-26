@@ -11,7 +11,7 @@
 - [x] CRUD de Tenants (Criação e Gestão de Lojas).
 - [x] Associação Automática Usuário ↔ Tenant.
 - [ ] Resolução Dinâmica de Rotas de Lojas (Subdomínios).
-- [ ] Criação do layout principal do Dashboard pós-login.
+- [x] Criação do layout principal do Dashboard pós-login.
 
 ## Phase 3: Store Management (⚪ Futuro)
 - [ ] Gestão de Produtos e Categorias (focada no Tenant atual).

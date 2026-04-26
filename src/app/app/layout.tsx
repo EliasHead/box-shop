@@ -8,6 +8,8 @@ import {
 } from '@/components/ui/sheet'
 import { ReactNode } from 'react'
 import { logout } from '@/lib/actions/auth'
+import { auth } from '@/auth'
+import { prisma } from '@/lib/prisma'
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Visão Geral' },
@@ -15,7 +17,19 @@ const navItems = [
   { href: '/dashboard/settings', icon: Settings, label: 'Configurações' },
 ]
 
-export default function AppLayout({ children }: { children: ReactNode }) {
+export default async function AppLayout({ children }: { children: ReactNode }) {
+  const session = await auth()
+  let storeName = 'Minha Loja'
+  
+  if (session?.user?.tenantId) {
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: session.user.tenantId },
+      select: { name: true }
+    })
+    if (tenant) {
+      storeName = tenant.name
+    }
+  }
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       {/* Desktop Sidebar */}
@@ -94,7 +108,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             </SheetContent>
           </Sheet>
           <div className="w-full flex-1">
-            <h1 className="text-lg font-semibold">Minha Loja</h1>
+            <h1 className="text-lg font-semibold">{storeName}</h1>
           </div>
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-muted/10">
