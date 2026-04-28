@@ -65,26 +65,16 @@ export default auth((req) => {
       return NextResponse.redirect(new URL(`http://app.${process.env.NEXT_PUBLIC_ROOT_DOMAIN}/login`))
     }
 
-    // Onboarding routing guards
-    const hasTenant = !!session.user?.tenantId
-    if (!hasTenant && path !== '/onboarding') {
-      return NextResponse.redirect(new URL(`http://app.${process.env.NEXT_PUBLIC_ROOT_DOMAIN}/onboarding`))
-    }
-    if (hasTenant && path === '/onboarding') {
-      return NextResponse.redirect(new URL(`http://app.${process.env.NEXT_PUBLIC_ROOT_DOMAIN}/dashboard`))
-    }
-
     return NextResponse.rewrite(
       new URL(`/app${path === '/' ? '' : path}`, req.url)
     )
   }
 
-  // rewrite root application to `/(marketing)`
   if (
     hostname === 'localhost:3000' ||
     hostname === process.env.NEXT_PUBLIC_ROOT_DOMAIN
   ) {
-    return NextResponse.rewrite(new URL(`/(marketing)${path}`, req.url))
+    return NextResponse.next()
   }
 
   // rewrite everything else to `/[domain]/[slug]` dynamic route

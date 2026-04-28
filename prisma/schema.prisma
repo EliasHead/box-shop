@@ -68,8 +68,52 @@ model Product {
   tenantId    String
   tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
+  stock          Int      @default(0)
+  trackInventory Boolean  @default(true)
+
+  variationTypes ProductVariationType[]
+  variants       ProductVariant[]
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@unique([tenantId, slug])
+}
+
+// Variations Support
+model ProductVariationType {
+  id        String   @id @default(cuid())
+  name      String   // e.g. "Cor"
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  options   ProductVariationOption[]
+  
+  @@unique([productId, name])
+}
+
+model ProductVariationOption {
+  id               String               @id @default(cuid())
+  value            String               // e.g. "Azul"
+  variationTypeId  String
+  variationType    ProductVariationType @relation(fields: [variationTypeId], references: [id], onDelete: Cascade)
+  
+  variants         ProductVariant[]
+}
+
+model ProductVariant {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  sku       String?
+  price     Float?
+  stock     Int      @default(0)
+  
+  options   ProductVariationOption[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([productId, sku])
 }

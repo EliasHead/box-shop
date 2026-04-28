@@ -18,6 +18,20 @@ export async function getProducts() {
     where: { tenantId: session.user.tenantId },
     include: {
       category: true,
+      variationTypes: {
+        include: {
+          options: true,
+        },
+      },
+      variants: {
+        include: {
+          options: {
+            include: {
+              variationType: true,
+            },
+          },
+        },
+      },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -65,17 +79,71 @@ export async function createProduct(data: ProductInput) {
     }
   }
 
-  const product = await prisma.product.create({
-    data: {
-      name: parsed.data.name,
-      slug: parsed.data.slug,
-      description: parsed.data.description,
-      price: parsed.data.price,
-      status: parsed.data.status,
-      sku: parsed.data.sku,
-      categoryId: parsed.data.categoryId,
-      tenantId: session.user.tenantId,
-    },
+  const product = await prisma.$transaction(async (tx) => {
+    // 1. Create base product
+    const newProduct = await tx.product.create({
+      data: {
+        name: parsed.data.name,
+        slug: parsed.data.slug,
+        description: parsed.data.description,
+        price: parsed.data.price,
+        status: parsed.data.status,
+        sku: parsed.data.sku || undefined,
+        categoryId: parsed.data.categoryId || undefined,
+        tenantId: session.user.tenantId,
+        stock: parsed.data.stock,
+        trackInventory: parsed.data.trackInventory,
+      },
+    });
+
+    // 2. Create variation types and options
+    if (parsed.data.variationTypes && parsed.data.variationTypes.length > 0) {
+      const optionMap: Record<string, Record<string, string>> = {};
+
+      for (const vt of parsed.data.variationTypes) {
+        const typeRecord = await tx.productVariationType.create({
+          data: {
+            name: vt.name,
+            productId: newProduct.id,
+            options: {
+              create: vt.options.map((opt) => ({ value: opt })),
+            },
+          },
+          include: { options: true },
+        });
+
+        optionMap[vt.name] = {};
+        for (const optRecord of typeRecord.options) {
+          optionMap[vt.name][optRecord.value] = optRecord.id;
+        }
+      }
+
+      // 3. Create variants
+      if (parsed.data.variants && parsed.data.variants.length > 0) {
+        for (const variant of parsed.data.variants) {
+          const optionIds = Object.entries(variant.options).map(([typeName, optionValue]) => {
+            const val = optionValue as string;
+            const optId = optionMap[typeName]?.[val];
+            if (!optId) throw new Error(`Opção ${val} do tipo ${typeName} não encontrada.`);
+            return { id: optId };
+          });
+
+          await tx.productVariant.create({
+            data: {
+              productId: newProduct.id,
+              sku: variant.sku,
+              price: variant.price,
+              stock: variant.stock,
+              options: {
+                connect: optionIds,
+              },
+            },
+          });
+        }
+      }
+    }
+
+    return newProduct;
   });
 
   revalidatePath("/app/products");
@@ -135,17 +203,73 @@ export async function updateProduct(id: string, data: ProductInput) {
     }
   }
 
-  const product = await prisma.product.update({
-    where: { id },
-    data: {
-      name: parsed.data.name,
-      slug: parsed.data.slug,
-      description: parsed.data.description,
-      price: parsed.data.price,
-      status: parsed.data.status,
-      sku: parsed.data.sku,
-      categoryId: parsed.data.categoryId,
-    },
+  const product = await prisma.$transaction(async (tx) => {
+    const updatedProduct = await tx.product.update({
+      where: { id },
+      data: {
+        name: parsed.data.name,
+        slug: parsed.data.slug,
+        description: parsed.data.description,
+        price: parsed.data.price,
+        status: parsed.data.status,
+        sku: parsed.data.sku || null,
+        categoryId: parsed.data.categoryId || null,
+        stock: parsed.data.stock,
+        trackInventory: parsed.data.trackInventory,
+      },
+    });
+
+    // Delete existing variations to recreate them cleanly
+    await tx.productVariationType.deleteMany({ where: { productId: id } });
+    await tx.productVariant.deleteMany({ where: { productId: id } });
+
+    // Recreate variations
+    if (parsed.data.variationTypes && parsed.data.variationTypes.length > 0) {
+      const optionMap: Record<string, Record<string, string>> = {};
+
+      for (const vt of parsed.data.variationTypes) {
+        const typeRecord = await tx.productVariationType.create({
+          data: {
+            name: vt.name,
+            productId: updatedProduct.id,
+            options: {
+              create: vt.options.map((opt) => ({ value: opt })),
+            },
+          },
+          include: { options: true },
+        });
+
+        optionMap[vt.name] = {};
+        for (const optRecord of typeRecord.options) {
+          optionMap[vt.name][optRecord.value] = optRecord.id;
+        }
+      }
+
+      if (parsed.data.variants && parsed.data.variants.length > 0) {
+        for (const variant of parsed.data.variants) {
+          const optionIds = Object.entries(variant.options).map(([typeName, optionValue]) => {
+            const val = optionValue as string;
+            const optId = optionMap[typeName]?.[val];
+            if (!optId) throw new Error(`Opção ${val} do tipo ${typeName} não encontrada.`);
+            return { id: optId };
+          });
+
+          await tx.productVariant.create({
+            data: {
+              productId: updatedProduct.id,
+              sku: variant.sku,
+              price: variant.price,
+              stock: variant.stock,
+              options: {
+                connect: optionIds,
+              },
+            },
+          });
+        }
+      }
+    }
+
+    return updatedProduct;
   });
 
   revalidatePath("/app/products");

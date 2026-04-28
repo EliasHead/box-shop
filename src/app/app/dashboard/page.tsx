@@ -1,28 +1,42 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Package, LineChart, Users, ExternalLink } from "lucide-react"
-import { auth } from "@/auth"
+import { auth, signOut } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 
-export default async function DashboardOverview() {
+export default async function DashboardPage() {
   const session = await auth()
   
-  if (!session?.user?.tenantId) {
-    redirect('/app/onboarding')
+  if (!session?.user?.id) {
+    redirect('/login')
   }
 
-  const tenantId = session.user.tenantId
-  
+  // Verify the user still exists in DB (handles stale JWT after DB reset)
+  const dbUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { id: true, tenantId: true }
+  })
+
+  if (!dbUser) {
+    // JWT is completely stale — user no longer exists in DB
+    await signOut({ redirect: false })
+    redirect('/login')
+  }
+
+  if (!dbUser.tenantId) {
+    redirect('/onboarding')
+  }
+
   const [tenant, productCount] = await Promise.all([
-    prisma.tenant.findUnique({ where: { id: tenantId } }),
-    prisma.product.count({ where: { tenantId } })
+    prisma.tenant.findUnique({ where: { id: dbUser.tenantId } }),
+    prisma.product.count({ where: { tenantId: dbUser.tenantId } })
   ])
 
   if (!tenant) {
-    redirect('/app/onboarding')
+    redirect('/onboarding')
   }
 
   const storeUrl = `http://${tenant.domain}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'localhost:3000'}`
