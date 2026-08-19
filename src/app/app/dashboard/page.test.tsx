@@ -7,6 +7,9 @@ import { redirect } from 'next/navigation'
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {
+    user: {
+      findUnique: vi.fn()
+    },
     tenant: {
       findUnique: vi.fn()
     },
@@ -17,7 +20,8 @@ vi.mock('@/lib/prisma', () => ({
 }))
 
 vi.mock('@/auth', () => ({
-  auth: vi.fn()
+  auth: vi.fn(),
+  signOut: vi.fn()
 }))
 
 vi.mock('next/navigation', () => ({
@@ -30,19 +34,24 @@ beforeEach(() => {
   vi.clearAllMocks()
 })
 
-test('redireciona para login se usuário não estiver autenticado ou não tiver tenantId', async () => {
+test('redireciona para login se usuário não estiver autenticado', async () => {
   vi.mocked(auth).mockResolvedValueOnce(null as any)
-  
+
   await expect(DashboardOverview()).rejects.toThrow('NEXT_REDIRECT')
-  expect(redirect).toHaveBeenCalledWith('/app/onboarding')
+  expect(redirect).toHaveBeenCalledWith('/login')
 })
 
 test('renderiza o dashboard com a url da loja e contagem de produtos', async () => {
-  vi.mocked(auth).mockResolvedValueOnce({ 
-    user: { id: 'user-1', tenantId: 'tenant-1' }, 
-    expires: '' 
+  vi.mocked(auth).mockResolvedValueOnce({
+    user: { id: 'user-1', tenantId: 'tenant-1' },
+    expires: ''
   } as any)
-  
+
+  vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+    id: 'user-1',
+    tenantId: 'tenant-1'
+  } as any)
+
   vi.mocked(prisma.tenant.findUnique).mockResolvedValueOnce({
     id: 'tenant-1',
     name: 'Minha Super Loja',

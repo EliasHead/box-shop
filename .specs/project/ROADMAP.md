@@ -13,9 +13,9 @@
 - [x] Resolução Dinâmica de Rotas de Lojas (Subdomínios).
 - [x] Criação do layout principal do Dashboard pós-login.
 
-## Phase 3: Store Management (🟡 Próximo)
+## Phase 3: Store Management (🟡 Em andamento)
 - [x] Gestão de Produtos e Categorias (focada no Tenant atual).
-- [ ] Gestão de Estoque e Variações.
+- [x] Gestão de Estoque e Variações.
 - [ ] Upload de Imagens/Mídia.
 
 ## Phase 4: Storefront & Checkout (⚪ Futuro)
