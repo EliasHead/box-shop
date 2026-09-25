@@ -22,6 +22,8 @@
 - **Next.js 16 + Turbopack:** O projeto utiliza Next.js 16 com Turbopack. Configuramos `serverExternalPackages` no `next.config.ts` para evitar que o Turbopack injete stubs de browser/edge em bibliotecas nativas de Node.js como `@prisma/client` e `bcryptjs`.
 
 ## Blockers & Resolved Issues
+- [x] *`npx prisma db seed` quebrado no Prisma v7* — O Prisma v7 moveu a configuração de seed de `package.json` (`"prisma": {"seed": ...}`, agora silenciosamente ignorado) para `migrations.seed` em `prisma.config.ts`. Corrigido em 25/09/2026 (commit `555c201`).
+- [x] *AUTH_SECRET e NEXT_PUBLIC_ROOT_DOMAIN ausentes no compose.dev.yml* — Descobertos ao testar o fluxo de login manualmente: sem `AUTH_SECRET`, o Auth.js disparava `MissingSecret` em todo request; sem `NEXT_PUBLIC_ROOT_DOMAIN`, o middleware tratava usuários não autenticados como logados e redirecionava `/login` para `http://app.undefined/`, bloqueando o login por completo. Corrigido em 25/09/2026 (commit `eeb070d`) carregando `AUTH_SECRET` via `.env` (gitignored, opcional) em vez de hardcoded no compose; adicionado `.env.example`.
 - [x] *Module not found 'bcryptjs'* — Resolvido instalando a dependência diretamente dentro do container `boxshop-web-dev`.
 - [x] *Vitest falhando no next/server* — Resolvido mockando o `next-auth` globalmente em `vitest.setup.ts` para testes de UI/Server Actions isolados.
 - [x] *PrismaClientInitializationError no Middleware* — Resolvido removendo a dependência do Prisma do middleware através da separação do `auth.config.ts`.
