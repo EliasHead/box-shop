@@ -15,6 +15,10 @@ services:
     environment:
       - NODE_ENV=development
       - DATABASE_URL=postgresql://admin:admin_password@db:5432/boxshop_dev
+      - NEXT_PUBLIC_ROOT_DOMAIN=localhost:3000
+    env_file:
+      - path: ../.env
+        required: false
     command: sh -c "npm install && npx prisma generate && npx prisma db push --accept-data-loss && npm run dev"
     depends_on:
       db:
