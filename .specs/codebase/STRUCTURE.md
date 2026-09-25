@@ -47,7 +47,7 @@ box-shop/
 │   ├── types/
 │   │   └── next-auth.d.ts       # Auth type augmentation
 │   ├── auth.ts                  # NextAuth v5 configuration
-│   └── middleware.ts            # Multi-tenancy routing
+│   └── proxy.ts            # Multi-tenancy routing
 ├── Dockerfile                   # Multi-stage production build
 ├── components.json              # shadcn/ui configuration
 ├── eslint.config.mjs            # ESLint flat config
@@ -88,13 +88,13 @@ box-shop/
 ### Core Infrastructure
 
 **Purpose:** Auth, database, and utility functions
-**Location:** `src/lib/`, `src/auth.ts`, `src/middleware.ts`
-**Key files:** `prisma.ts`, `utils.ts`, `auth.ts`, `middleware.ts`
+**Location:** `src/lib/`, `src/auth.ts`, `src/proxy.ts`
+**Key files:** `prisma.ts`, `utils.ts`, `auth.ts`, `proxy.ts`
 
 ## Where Things Live
 
 **Multi-Tenancy:**
-- Routing logic: `src/middleware.ts`
+- Routing logic: `src/proxy.ts`
 - Data isolation: `prisma/schema.prisma` (Tenant model with relations)
 
 **Authentication:**

@@ -7,7 +7,7 @@
 ```mermaid
 graph TD
     subgraph "Entry Point"
-        MW[middleware.ts<br/>Multi-tenancy Router]
+        MW[proxy.ts<br/>Multi-tenancy Router]
     end
 
     subgraph "Route Groups"
@@ -42,7 +42,7 @@ graph TD
 
 ### Multi-Tenancy via Middleware Rewriting
 
-**Location:** `src/middleware.ts`
+**Location:** `src/proxy.ts`
 **Purpose:** Route requests to the correct app surface based on hostname (subdomain).
 **Implementation:** The middleware intercepts all non-API/static requests and rewrites them:
 - `app.localhost:3000` → `/app/*` (admin dashboard)
@@ -75,7 +75,7 @@ graph TD
 
 ```
 Request (loja1.localhost:3000)
-  → middleware.ts: extract hostname, rewrite to /loja1/
+  → proxy.ts: extract hostname, rewrite to /loja1/
   → [domain]/layout.tsx: mobile-first shell (max-w-md)
   → [domain]/page.tsx: render product catalog (currently mocked)
   → WhatsApp CTA button: direct conversion
@@ -85,7 +85,7 @@ Request (loja1.localhost:3000)
 
 ```
 Request (app.localhost:3000)
-  → middleware.ts: rewrite to /app/
+  → proxy.ts: rewrite to /app/
   → app/layout.tsx: sidebar layout (desktop + mobile sheet)
   → app/dashboard/page.tsx: overview cards (mocked data)
   → app/dashboard/products/page.tsx: empty state + AI generation CTA

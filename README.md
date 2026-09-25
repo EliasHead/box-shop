@@ -35,7 +35,7 @@ O projeto segue os padrões de mercado e a estrutura recomendada pelo Next.js:
 - `src/app/(marketing)`: Site institucional e landing page do SaaS.
 - `src/app/[domain]`: Motor da vitrine dinâmica que renderiza a loja do lojista com base no subdomínio.
 - `src/app/app`: Dashboard administrativo onde o lojista gerencia produtos e configurações.
-- `src/middleware.ts`: O "cérebro" da multi-tenancy, responsável pelo redirecionamento e rewrite de rotas dinâmicas.
+- `src/proxy.ts`: O "cérebro" da multi-tenancy, responsável pelo redirecionamento e rewrite de rotas dinâmicas (convenção `proxy` do Next.js 16, antigo `middleware.ts`).
 - `docker/`: Configurações de infraestrutura isoladas por ambiente (dev/prod).
 
 ---
