@@ -12,6 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { createProduct, updateProduct, deleteProduct } from "@/lib/actions/products";
 import { ProductInput } from "@/lib/validations/product";
+import { parseBasePrice } from "./product-price";
+
+type ProductFormData = Omit<ProductInput, "price"> & { price: string };
 
 // Helpers para combinações (Cartesian Product)
 function cartesian(args: any[]) {
@@ -37,12 +40,12 @@ export function ProductsClient({ initialProducts, categories }: { initialProduct
   const [error, setError] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  const defaultForm = {
+  const defaultForm: ProductFormData = {
     name: "",
     slug: "",
     description: "",
-    price: 0,
-    status: "DRAFT" as any,
+    price: "0",
+    status: "DRAFT",
     sku: "",
     categoryId: null,
     stock: 0,
@@ -51,7 +54,7 @@ export function ProductsClient({ initialProducts, categories }: { initialProduct
     variants: [],
   };
 
-  const [formData, setFormData] = useState<ProductInput>(defaultForm);
+  const [formData, setFormData] = useState<ProductFormData>(defaultForm);
 
   // Controle temporário para a UI de Variações
   const [tempVarType, setTempVarType] = useState("");
@@ -90,7 +93,7 @@ export function ProductsClient({ initialProducts, categories }: { initialProduct
       name: product.name,
       slug: product.slug,
       description: product.description || "",
-      price: product.price,
+      price: String(product.price),
       status: product.status,
       sku: product.sku || "",
       categoryId: product.categoryId || null,
@@ -166,10 +169,10 @@ export function ProductsClient({ initialProducts, categories }: { initialProduct
     setError("");
 
     try {
-      const payload = {
+      const payload: ProductInput = {
         ...formData,
         categoryId: formData.categoryId === "none" ? null : formData.categoryId,
-        price: Number(formData.price),
+        price: parseBasePrice(formData.price),
         stock: Number(formData.stock),
       };
 

@@ -1,4 +1,6 @@
 import { expect, test, vi, beforeEach } from "vitest";
+import type { ProductInput } from "@/lib/validations/product";
+import type { Session } from "next-auth";
 import { getProducts, createProduct, updateProduct, deleteProduct } from "./products";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
@@ -45,6 +47,37 @@ vi.mock("next/cache", () => ({
 
 beforeEach(() => {
   vi.clearAllMocks();
+});
+
+const priceInput: ProductInput = {
+  name: "Camiseta", slug: "camiseta", price: 19.9, status: "DRAFT",
+  stock: 0, trackInventory: true, variationTypes: [], variants: [],
+};
+
+// Select the no-argument session overload rather than the middleware overload.
+const sessionAuth = vi.mocked(auth as () => Promise<Session | null>);
+
+test("criação e edição rejeitam operação sem sessão sem escrever", async () => {
+  sessionAuth.mockResolvedValue(null);
+  await expect(createProduct(priceInput)).rejects.toThrow("Não autorizado");
+  await expect(updateProduct("product-1", priceInput)).rejects.toThrow("Não autorizado");
+  expect(prisma.$transaction).not.toHaveBeenCalled();
+  expect(txMock.product.create).not.toHaveBeenCalled();
+  expect(txMock.product.update).not.toHaveBeenCalled();
+});
+
+test("edição rejeita produto de outra loja sem escrever", async () => {
+  sessionAuth.mockResolvedValueOnce({
+    user: { id: "user-1", role: "OWNER", tenantId: "tenant-1" },
+    expires: "2099-01-01T00:00:00Z",
+  });
+  vi.mocked(prisma.product.findFirst).mockResolvedValueOnce(null);
+  await expect(updateProduct("other-store-product", priceInput)).rejects.toThrow("Produto não encontrado");
+  expect(prisma.product.findFirst).toHaveBeenCalledWith({
+    where: { id: "other-store-product", tenantId: "tenant-1" },
+  });
+  expect(prisma.$transaction).not.toHaveBeenCalled();
+  expect(txMock.product.update).not.toHaveBeenCalled();
 });
 
 test("createProduct falha se o slug já existir no tenant", async () => {
