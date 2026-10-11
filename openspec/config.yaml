@@ -1,0 +1,57 @@
+schema: spec-driven
+
+context: |
+  Language: pt-BR
+  All artifacts must be written in pt-BR.
+  Keep OpenSpec structural headings and SHALL/MUST keywords in English.
+  Project: BoxShop, SaaS multi-tenant de vitrines com foco em vendas via WhatsApp.
+  Stack: Next.js 16.2.3 App Router, React 19, TypeScript, Tailwind CSS 4,
+  shadcn/ui, Auth.js v5, Prisma 7 com adapter-pg e PostgreSQL 15.
+  Rotas: src/proxy.ts escolhe marketing no domínio raiz, painel no subdomínio
+  app e vitrine pública nos subdomínios de lojas. As URLs públicas do painel
+  usam /dashboard, /login e /onboarding, reescritas internamente para /app/*.
+  Usuário e loja (Tenant) são entidades diferentes, vinculadas por tenantId.
+  Autenticação real usa credenciais e bcrypt; sessões usam JWT.
+  Mutações administrativas usam Server Actions e devem preservar isolamento
+  por tenantId. Cada produto pode ter uma categoria e múltiplas variações.
+  Antes de escrever código Next.js, leia o guia local indicado em AGENTS.md.
+  A documentação anterior em .specs/ é referência histórica e contém divergências
+  com o código. Confira implementação e testes antes de tratá-la como requisito.
+  Ainda não há baseline completo em openspec/specs/: documente os domínios
+  incrementalmente, conforme mudanças reais forem implementadas e arquivadas.
+  Verificações do projeto: npm test, npm run lint e npm run build.
+  Ambiente local recomendado: docker/compose.dev.yml, Node 22 e PostgreSQL 15.
+
+rules:
+  proposal:
+    - Diferencie comportamento existente, defeitos conhecidos e comportamento proposto.
+    - Delimite o escopo e preserve decisões anteriores relevantes, citando sua origem.
+  specs:
+    - Use requisitos verificáveis com SHALL ou MUST e cenários WHEN/THEN.
+    - Inclua isolamento entre lojas e acesso sem sessão quando aplicável.
+  design:
+    - Descreva impactos no schema, compatibilidade e tratamento dos dados existentes quando aplicável.
+  tasks:
+    - Inclua validação adequada ao escopo e registre falhas preexistentes separadamente.
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always state what is out of scope
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
+
+# Per-operation guidance (optional)
+# Add advisory guidance for how apply and archive work should be conducted.
+# This is separate from artifact rules above.
+# Example:
+#   operations:
+#     apply:
+#       guidance:
+#         - Keep test summaries concise
+#     archive:
+#       guidance:
+#         - Summarize the archive outcome before finishing

@@ -42,6 +42,12 @@ O projeto segue os padrões de mercado e a estrutura recomendada pelo Next.js:
 
 ## 🚦 Como Inicializar
 
+### Especificações e planejamento
+
+Novas mudanças seguem o **OpenSpec**. Consulte o [guia do projeto](openspec/README.md)
+para o fluxo de proposta, implementação, validação e arquivamento.
+A pasta `.specs/` foi preservada como referência histórica.
+
 ### Pré-requisitos
 - Docker & Docker Compose instalados.
 

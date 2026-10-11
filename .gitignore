@@ -45,4 +45,7 @@ next-env.d.ts
 
 # Antigravity
 .agent
-.agents
+/.agents/*
+!/.agents/skills/
+/.agents/skills/*
+!/.agents/skills/openspec-*/
