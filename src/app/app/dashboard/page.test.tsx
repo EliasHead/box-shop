@@ -54,6 +54,8 @@ test('renderiza o dashboard com a url da loja e contagem de produtos', async () 
     id: 'tenant-1',
     name: 'Minha Super Loja',
     domain: 'superloja',
+    description: null,
+    whatsapp: null,
     createdAt: new Date(),
     updatedAt: new Date()
   })

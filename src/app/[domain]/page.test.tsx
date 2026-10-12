@@ -44,6 +44,8 @@ test('renderiza a loja com a mensagem de estado vazio se não houver produtos', 
     id: 'tenant-1',
     name: 'Loja Vazia',
     domain: 'loja-vazia',
+    description: null,
+    whatsapp: null,
     createdAt: new Date(),
     updatedAt: new Date()
   })
@@ -62,6 +64,8 @@ test('renderiza os produtos corretamente se existirem', async () => {
     id: 'tenant-1',
     name: 'Loja Cheia',
     domain: 'loja-cheia',
+    description: null,
+    whatsapp: null,
     createdAt: new Date(),
     updatedAt: new Date()
   })
@@ -129,4 +133,13 @@ test.each([
     expect(screen.getAllByRole('heading', { level: 3 }).map(heading => heading.textContent))
       .toEqual(['Publicado recente', 'Publicado antigo'])
   }
+})
+
+test.each([null, 'Descrição pública'])('identidade pública em loja vazia: %s', async description => {
+  vi.mocked(prisma.tenant.findUnique).mockResolvedValue(tenantFixture({ name: 'Nome atualizado', description }))
+  vi.mocked(prisma.product.findMany).mockResolvedValue([])
+  render(await StorefrontPage({ params: Promise.resolve({ domain: 'loja.localhost:3000' }) }))
+  expect(screen.getByText('Nome atualizado')).toBeInTheDocument()
+  if (description) expect(screen.getByText(description)).toBeInTheDocument()
+  else expect(screen.queryByText('Descrição pública')).not.toBeInTheDocument()
 })

@@ -76,3 +76,28 @@ Com o sistema rodando, você pode acessar diferentes facetas da plataforma usand
 
 > [!TIP]
 > O BoxShop utiliza a paleta **Emerald (Esmeralda)** para criar uma conexão visual imediata e confiável com a experiência do WhatsApp, otimizando o fluxo cognitivo de compra do cliente final.
+
+## Configurações da loja
+
+Em `/dashboard/settings`, edite nome (1–100 caracteres), descrição opcional
+(até 500 caracteres, pública na vitrine) e WhatsApp opcional. Informe código
+do país e DDD, por exemplo `+55 (11) 99999-9999`; o número é armazenado
+somente com dígitos (8–15). Campos opcionais vazios removem os valores.
+O endereço da loja permanece somente para leitura.
+
+Antes de executar esta versão, aplique a migration aditiva e gere o client:
+
+```bash
+npx prisma migrate deploy
+npx prisma generate
+```
+
+Bancos legados criados por `prisma db push` precisam de baseline de migrations
+antes de `migrate deploy`. No desenvolvimento legado, aplique somente o SQL
+de `prisma/migrations/20261012120000_add_store_settings/migration.sql`
+com `npx prisma db execute --file <arquivo>` e gere o client. Não use reset.
+
+Para validar o fluxo com PostgreSQL de desenvolvimento, execute
+`RUN_DATABASE_TESTS=1 npx vitest run src/__tests__/integration/store-settings.test.tsx`
+no container. O teste cria e remove suas próprias lojas e usuário; sessão e
+invalidação de cache são simuladas, enquanto consultas e gravações são reais.

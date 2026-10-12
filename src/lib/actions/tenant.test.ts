@@ -58,7 +58,7 @@ test('retorna erro se o domínio for inválido', async () => {
 test('retorna erro se o domínio já estiver em uso', async () => {
   sessionAuth.mockResolvedValueOnce(sessionFixture({ tenantId: null }))
   
-  vi.mocked(prisma.tenant.findUnique).mockResolvedValueOnce({ id: 'existing', name: 'Existing', domain: 'loja', createdAt: new Date(), updatedAt: new Date() })
+  vi.mocked(prisma.tenant.findUnique).mockResolvedValueOnce({ id: 'existing', name: 'Existing', domain: 'loja', description: null, whatsapp: null, createdAt: new Date(), updatedAt: new Date() })
   
   const result = await createTenant({ name: 'Loja', domain: 'loja' })
   expect(result).toEqual({ error: 'Este endereço já está em uso' })
@@ -68,7 +68,7 @@ test('cria a loja e associa ao usuário com sucesso', async () => {
   sessionAuth.mockResolvedValueOnce(sessionFixture({ tenantId: null }))
   
   vi.mocked(prisma.tenant.findUnique).mockResolvedValueOnce(null)
-  vi.mocked(prisma.tenant.create).mockResolvedValueOnce({ id: 'new-tenant-id', name: 'Loja', domain: 'loja', createdAt: new Date(), updatedAt: new Date() })
+  vi.mocked(prisma.tenant.create).mockResolvedValueOnce({ id: 'new-tenant-id', name: 'Loja', domain: 'loja', description: null, whatsapp: null, createdAt: new Date(), updatedAt: new Date() })
   vi.mocked(prisma.user.update).mockResolvedValueOnce(userFixture())
     
   

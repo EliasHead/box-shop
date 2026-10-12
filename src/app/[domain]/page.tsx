@@ -27,7 +27,10 @@ export default async function StorefrontPage({ params }: { params: Promise<{ dom
   return (
     <>
       <header className="sticky top-0 z-50 w-full backdrop-blur-lg bg-white/70 border-b border-slate-200 shadow-sm transition-all py-4 px-6 flex items-center justify-between">
-        <h1 className="font-bold text-xl text-slate-900 tracking-tight">{tenant.name}</h1>
+        <div>
+          <h1 className="font-bold text-xl text-slate-900 tracking-tight">{tenant.name}</h1>
+          {tenant.description && <p className="mt-1 whitespace-pre-line text-sm text-slate-500">{tenant.description}</p>}
+        </div>
       </header>
 
       <div className="p-4 flex flex-col gap-6 w-full min-h-[calc(100vh-70px)]">

@@ -9,6 +9,8 @@ datasource db {
 // Multi-Tenant Isolation
 model Tenant {
   id        String   @id @default(cuid())
+  description String?
+  whatsapp    String?
   domain    String   @unique
   name      String
   createdAt DateTime @default(now())

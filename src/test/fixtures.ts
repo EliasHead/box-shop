@@ -16,7 +16,7 @@ export function productFixture(overrides: Partial<Product> = {}): Product {
 }
 
 export function tenantFixture(overrides: Partial<Tenant> = {}): Tenant {
-  return { id: "tenant-1", name: "Loja", domain: "loja", ...timestamps, ...overrides };
+  return { id: "tenant-1", name: "Loja", domain: "loja", description: null, whatsapp: null, ...timestamps, ...overrides };
 }
 
 export function userFixture(overrides: Partial<User> = {}): User {
