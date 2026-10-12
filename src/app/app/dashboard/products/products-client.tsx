@@ -1,6 +1,9 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import type { Category, Product } from "@prisma/client";
+import type { getProducts } from "@/lib/actions/products";
+import { errorMessage } from "@/lib/error-message";
+import { useState } from "react";
 import { Plus, Trash, Edit, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,17 +14,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { createProduct, updateProduct, deleteProduct } from "@/lib/actions/products";
-import { ProductInput } from "@/lib/validations/product";
+import { productSchema, type ProductInput } from "@/lib/validations/product";
 import { parseBasePrice } from "./product-price";
 
-type ProductFormData = Omit<ProductInput, "price"> & { price: string };
+type ProductFormData = Omit<ProductInput, "price" | "status"> & { price: string; status: string };
+type ListedProduct = Awaited<ReturnType<typeof getProducts>>[number];
+type ProductRow = Product & Partial<Pick<ListedProduct, "category" | "variationTypes" | "variants">>;
+type VariantInput = ProductInput["variants"][number];
 
 // Helpers para combinações (Cartesian Product)
-function cartesian(args: any[]) {
+function cartesian<T>(args: T[][]) {
   if (args.length === 0) return [];
-  const r: any[] = [];
+  const r: T[][] = [];
   const max = args.length - 1;
-  function helper(arr: any[], i: number) {
+  function helper(arr: T[], i: number) {
     for (let j = 0, l = args[i].length; j < l; j++) {
       const a = arr.slice(0);
       a.push(args[i][j]);
@@ -33,7 +39,7 @@ function cartesian(args: any[]) {
   return r;
 }
 
-export function ProductsClient({ initialProducts, categories }: { initialProducts: any[]; categories: any[] }) {
+export function ProductsClient({ initialProducts, categories }: { initialProducts: ProductRow[]; categories: Category[] }) {
   const [products, setProducts] = useState(initialProducts);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -67,18 +73,18 @@ export function ProductsClient({ initialProducts, categories }: { initialProduct
     setIsOpen(true);
   };
 
-  const handleOpenEdit = (product: any) => {
+  const handleOpenEdit = (product: ProductRow) => {
     setEditingId(product.id);
-    
+
     // Transformar dados do banco de volta para o formato de edição
-    const vTypes = product.variationTypes?.map((vt: any) => ({
+    const vTypes = product.variationTypes?.map((vt) => ({
       name: vt.name,
-      options: vt.options.map((o: any) => o.value)
+      options: vt.options.map((o) => o.value)
     })) || [];
 
-    const vVariants = product.variants?.map((v: any) => {
+    const vVariants = product.variants?.map((v) => {
       const opts: Record<string, string> = {};
-      v.options.forEach((opt: any) => {
+      v.options.forEach((opt) => {
         opts[opt.variationType.name] = opt.value;
       });
       return {
@@ -130,19 +136,19 @@ export function ProductsClient({ initialProducts, categories }: { initialProduct
     });
   };
 
-  const generateVariantsMatrix = (types: any[], existingVariants: any[]) => {
+  const generateVariantsMatrix = (types: ProductInput["variationTypes"], existingVariants: ProductInput["variants"]) => {
     if (types.length === 0) return [];
     const optionsArrays = types.map(t => t.options.map((val: string) => ({ typeName: t.name, value: val })));
     const combinations = cartesian(optionsArrays);
-    
+
     return combinations.map(combo => {
       const optRecord: Record<string, string> = {};
-      combo.forEach((c: any) => {
+      combo.forEach((c) => {
         optRecord[c.typeName] = c.value;
       });
-      
+
       // Try to find an existing variant to preserve price/stock/sku
-      const existing = existingVariants.find(ev => 
+      const existing = existingVariants.find(ev =>
         Object.keys(optRecord).every(k => ev.options[k] === optRecord[k])
       );
 
@@ -155,7 +161,7 @@ export function ProductsClient({ initialProducts, categories }: { initialProduct
     });
   };
 
-  const handleVariantChange = (index: number, field: string, value: any) => {
+  const handleVariantChange = <K extends "sku" | "price" | "stock",>(index: number, field: K, value: VariantInput[K]) => {
     setFormData(prev => {
       const newVariants = [...(prev.variants || [])];
       newVariants[index] = { ...newVariants[index], [field]: value };
@@ -173,6 +179,7 @@ export function ProductsClient({ initialProducts, categories }: { initialProduct
         ...formData,
         categoryId: formData.categoryId === "none" ? null : formData.categoryId,
         price: parseBasePrice(formData.price),
+        status: productSchema.shape.status.parse(formData.status),
         stock: Number(formData.stock),
       };
 
@@ -186,8 +193,8 @@ export function ProductsClient({ initialProducts, categories }: { initialProduct
         setProducts((prev) => [{ ...created, category: categoryMatch }, ...prev]);
       }
       setIsOpen(false);
-    } catch (err: any) {
-      setError(err.message || "Erro ao salvar produto");
+    } catch (err: unknown) {
+      setError(errorMessage(err, "Erro ao salvar produto"));
     } finally {
       setLoading(false);
     }
@@ -198,8 +205,8 @@ export function ProductsClient({ initialProducts, categories }: { initialProduct
     try {
       await deleteProduct(id);
       setProducts((prev) => prev.filter((p) => p.id !== id));
-    } catch (err: any) {
-      alert(err.message || "Erro ao excluir produto");
+    } catch (err: unknown) {
+      alert(errorMessage(err, "Erro ao excluir produto"));
     }
   };
 
@@ -222,7 +229,7 @@ export function ProductsClient({ initialProducts, categories }: { initialProduct
           </DialogHeader>
           <form onSubmit={handleSave} className="flex flex-col gap-6 mt-4">
             {error && <div className="text-sm text-red-500 font-medium p-3 bg-red-50 rounded-md">{error}</div>}
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="name">Nome do Produto</Label>
@@ -289,7 +296,7 @@ export function ProductsClient({ initialProducts, categories }: { initialProduct
                 <Label>Status</Label>
                 <Select
                   value={formData.status}
-                  onValueChange={(val) => setFormData({ ...formData, status: val as any })}
+                  onValueChange={(val) => setFormData({ ...formData, status: val ?? formData.status })}
                 >
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -312,7 +319,7 @@ export function ProductsClient({ initialProducts, categories }: { initialProduct
 
             <div className="border-t pt-6">
               <h3 className="text-lg font-medium mb-4">Controle de Estoque e Variações</h3>
-              
+
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div className="grid gap-2">
                   <Label>Rastrear Estoque?</Label>
@@ -345,16 +352,16 @@ export function ProductsClient({ initialProducts, categories }: { initialProduct
               <div className="bg-muted/50 p-4 rounded-md mb-6">
                 <Label className="block mb-2">Adicionar Variação (ex: Cor, Tamanho)</Label>
                 <div className="flex gap-2 mb-4">
-                  <Input 
-                    placeholder="Nome (ex: Cor)" 
-                    value={tempVarType} 
-                    onChange={e => setTempVarType(e.target.value)} 
+                  <Input
+                    placeholder="Nome (ex: Cor)"
+                    value={tempVarType}
+                    onChange={e => setTempVarType(e.target.value)}
                     className="w-1/3"
                   />
-                  <Input 
-                    placeholder="Opções separadas por vírgula (ex: Azul, Verde)" 
-                    value={tempVarOptions} 
-                    onChange={e => setTempVarOptions(e.target.value)} 
+                  <Input
+                    placeholder="Opções separadas por vírgula (ex: Azul, Verde)"
+                    value={tempVarOptions}
+                    onChange={e => setTempVarOptions(e.target.value)}
                     className="flex-1"
                   />
                   <Button type="button" variant="secondary" onClick={handleAddVariationType}>Adicionar</Button>
@@ -393,29 +400,29 @@ export function ProductsClient({ initialProducts, categories }: { initialProduct
                             {Object.values(v.options).join(" - ")}
                           </TableCell>
                           <TableCell className="p-2">
-                            <Input 
-                              className="h-8 text-xs" 
-                              placeholder="SKU" 
-                              value={v.sku || ""} 
+                            <Input
+                              className="h-8 text-xs"
+                              placeholder="SKU"
+                              value={v.sku || ""}
                               onChange={(e) => handleVariantChange(i, "sku", e.target.value)}
                             />
                           </TableCell>
                           <TableCell className="p-2">
-                            <Input 
-                              type="number" 
-                              step="0.01" 
-                              className="h-8 text-xs" 
-                              placeholder="Preço R$" 
-                              value={v.price === null ? "" : v.price} 
+                            <Input
+                              type="number"
+                              step="0.01"
+                              className="h-8 text-xs"
+                              placeholder="Preço R$"
+                              value={v.price === null ? "" : v.price}
                               onChange={(e) => handleVariantChange(i, "price", e.target.value ? parseFloat(e.target.value) : null)}
                             />
                           </TableCell>
                           <TableCell className="p-2">
-                            <Input 
-                              type="number" 
-                              min="0" 
-                              className="h-8 text-xs" 
-                              value={v.stock} 
+                            <Input
+                              type="number"
+                              min="0"
+                              className="h-8 text-xs"
+                              value={v.stock}
                               onChange={(e) => handleVariantChange(i, "stock", parseInt(e.target.value) || 0)}
                             />
                           </TableCell>
@@ -455,9 +462,9 @@ export function ProductsClient({ initialProducts, categories }: { initialProduct
               </TableRow>
             ) : (
               products.map((product) => {
-                const isOutOfStock = product.trackInventory && 
-                  (product.variants?.length > 0 
-                    ? product.variants.every((v: any) => v.stock <= 0)
+                const isOutOfStock = product.trackInventory &&
+                  (product.variants && product.variants.length > 0
+                    ? product.variants.every((v) => v.stock <= 0)
                     : product.stock <= 0);
 
                 return (
@@ -465,7 +472,7 @@ export function ProductsClient({ initialProducts, categories }: { initialProduct
                     <TableCell>
                       <div className="font-medium flex items-center gap-2">
                         {product.name}
-                        {product.variants?.length > 0 && <Badge variant="outline" className="text-[10px]">Matriz</Badge>}
+                        {product.variants && product.variants.length > 0 && <Badge variant="outline" className="text-[10px]">Matriz</Badge>}
                       </div>
                       <div className="text-xs text-muted-foreground">SKU: {product.sku || "N/A"}</div>
                     </TableCell>
@@ -478,8 +485,8 @@ export function ProductsClient({ initialProducts, categories }: { initialProduct
                         <Badge variant="destructive">Esgotado</Badge>
                       ) : (
                         <Badge variant="secondary">
-                          {product.variants?.length > 0 
-                            ? `${product.variants.reduce((acc: number, v: any) => acc + (v.stock || 0), 0)} itens (Variados)` 
+                          {product.variants && product.variants.length > 0
+                            ? `${product.variants.reduce((acc, v) => acc + (v.stock || 0), 0)} itens (Variados)`
                             : `${product.stock} itens`}
                         </Badge>
                       )}

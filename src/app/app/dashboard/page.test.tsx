@@ -1,3 +1,5 @@
+import type { Session } from "next-auth"
+import { sessionFixture, userFixture } from "@/test/fixtures"
 import { expect, test, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import DashboardOverview from './page'
@@ -30,27 +32,23 @@ vi.mock('next/navigation', () => ({
   })
 }))
 
+const sessionAuth = vi.mocked(auth as () => Promise<Session | null>)
+
 beforeEach(() => {
   vi.clearAllMocks()
 })
 
 test('redireciona para login se usuário não estiver autenticado', async () => {
-  vi.mocked(auth).mockResolvedValueOnce(null as any)
+  sessionAuth.mockResolvedValueOnce(null)
 
   await expect(DashboardOverview()).rejects.toThrow('NEXT_REDIRECT')
   expect(redirect).toHaveBeenCalledWith('/login')
 })
 
 test('renderiza o dashboard com a url da loja e contagem de produtos', async () => {
-  vi.mocked(auth).mockResolvedValueOnce({
-    user: { id: 'user-1', tenantId: 'tenant-1' },
-    expires: ''
-  } as any)
+  sessionAuth.mockResolvedValueOnce(sessionFixture())
 
-  vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
-    id: 'user-1',
-    tenantId: 'tenant-1'
-  } as any)
+  vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(userFixture())
 
   vi.mocked(prisma.tenant.findUnique).mockResolvedValueOnce({
     id: 'tenant-1',

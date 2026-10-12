@@ -1,5 +1,7 @@
+import type { Session } from "next-auth";
+import { categoryFixture, sessionFixture } from "@/test/fixtures";
 import { expect, test, vi, beforeEach } from "vitest";
-import { getCategories, createCategory, updateCategory, deleteCategory } from "./categories";
+import { getCategories, createCategory, deleteCategory } from "./categories";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 
@@ -24,19 +26,21 @@ vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),
 }));
 
+const sessionAuth = vi.mocked(auth as () => Promise<Session | null>);
+
 beforeEach(() => {
   vi.clearAllMocks();
 });
 
 test("getCategories retorna erro se não autenticado", async () => {
-  vi.mocked(auth).mockResolvedValueOnce(null as any);
+  sessionAuth.mockResolvedValueOnce(null);
   await expect(getCategories()).rejects.toThrow("Não autorizado ou Tenant não encontrado");
 });
 
 test("getCategories retorna as categorias do tenant", async () => {
-  vi.mocked(auth).mockResolvedValueOnce({ user: { tenantId: "tenant-1" } } as any);
-  const mockCategories = [{ id: "cat-1", name: "Categoria 1" }];
-  vi.mocked(prisma.category.findMany).mockResolvedValueOnce(mockCategories as any);
+  sessionAuth.mockResolvedValueOnce(sessionFixture());
+  const mockCategories = [categoryFixture()];
+  vi.mocked(prisma.category.findMany).mockResolvedValueOnce(mockCategories);
 
   const result = await getCategories();
   expect(result).toEqual(mockCategories);
@@ -47,23 +51,23 @@ test("getCategories retorna as categorias do tenant", async () => {
 });
 
 test("createCategory falha com dados inválidos", async () => {
-  vi.mocked(auth).mockResolvedValueOnce({ user: { tenantId: "tenant-1" } } as any);
+  sessionAuth.mockResolvedValueOnce(sessionFixture());
   
   await expect(createCategory({ name: "A", slug: "A" })).rejects.toThrow("Dados inválidos");
 });
 
 test("createCategory falha se o slug já existir no tenant", async () => {
-  vi.mocked(auth).mockResolvedValueOnce({ user: { tenantId: "tenant-1" } } as any);
-  vi.mocked(prisma.category.findUnique).mockResolvedValueOnce({ id: "existing" } as any);
+  sessionAuth.mockResolvedValueOnce(sessionFixture());
+  vi.mocked(prisma.category.findUnique).mockResolvedValueOnce(categoryFixture({ id: "existing" }));
 
   await expect(createCategory({ name: "Calcados", slug: "calcados" })).rejects.toThrow("Já existe uma categoria com este slug");
 });
 
 test("createCategory cria a categoria com sucesso", async () => {
-  vi.mocked(auth).mockResolvedValueOnce({ user: { tenantId: "tenant-1" } } as any);
+  sessionAuth.mockResolvedValueOnce(sessionFixture());
   vi.mocked(prisma.category.findUnique).mockResolvedValueOnce(null);
-  const mockCreated = { id: "cat-1", name: "Calçados", slug: "calcados", tenantId: "tenant-1" };
-  vi.mocked(prisma.category.create).mockResolvedValueOnce(mockCreated as any);
+  const mockCreated = categoryFixture({ name: "Calçados", slug: "calcados" });
+  vi.mocked(prisma.category.create).mockResolvedValueOnce(mockCreated);
 
   const result = await createCategory({ name: "Calçados", slug: "calcados" });
   expect(result).toEqual(mockCreated);
@@ -73,9 +77,9 @@ test("createCategory cria a categoria com sucesso", async () => {
 });
 
 test("deleteCategory exclui a categoria se pertencer ao tenant", async () => {
-  vi.mocked(auth).mockResolvedValueOnce({ user: { tenantId: "tenant-1" } } as any);
-  vi.mocked(prisma.category.findFirst).mockResolvedValueOnce({ id: "cat-1", tenantId: "tenant-1" } as any);
-  vi.mocked(prisma.category.delete).mockResolvedValueOnce({} as any);
+  sessionAuth.mockResolvedValueOnce(sessionFixture());
+  vi.mocked(prisma.category.findFirst).mockResolvedValueOnce(categoryFixture());
+  vi.mocked(prisma.category.delete).mockResolvedValueOnce(categoryFixture());
 
   const result = await deleteCategory("cat-1");
   expect(result).toBe(true);

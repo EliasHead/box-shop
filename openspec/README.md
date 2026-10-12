@@ -70,7 +70,7 @@ Não usar caixas de requisitos pendentes nesses documentos como prova de que uma
 funcionalidade não existe. Autenticação, dashboard e vitrine já consultam o banco.
 O onboarding é verificado nas páginas; não há guard de tenant global no proxy.
 
-## Pendências conhecidas na adoção
+## Registro histórico da adoção
 
 Na validação local de 11/10/2026, foram observados:
 
@@ -81,8 +81,55 @@ Na validação local de 11/10/2026, foram observados:
 - Configurações da loja, upload de imagens e ação de compra via WhatsApp ainda
   precisam ser implementados.
 
-Esses itens não foram corrigidos pela migração e não são mudanças já aprovadas.
-Um primeiro uso sugerido é propor uma mudança pequena de estabilização.
+Esses resultados descrevem a adoção em 11/10/2026; não representam o estado atual.
+A correção de preço foi arquivada em `2026-10-11-fix-product-base-price`, e a de
+`tenantId` em `2026-10-12-fix-product-tenant-transaction`.
+
+## Verificação de estabilização — 12/10/2026
+
+Na mudança `stabilize-project-checks`, Docker com Node 22.23.3, Next.js 16.2.3 e
+Prisma Client 7.7.0: 68/68 testes passaram, lint sem erros ou avisos, TypeScript
+sem diagnósticos e build de produção concluído. Foram corrigidos a fixture e o
+teste unitário da vitrine, os tipos de formulários/mocks e imports sem uso.
+Os logs e a validação real estão registrados no `tasks.md` da mudança.
+
+Produtos DRAFT na vitrine, configurações da loja, upload e compra por WhatsApp
+continuam pendências funcionais independentes desta manutenção.
+
+## Correção de publicação — 12/10/2026
+
+Na mudança `hide-draft-storefront-products`, a consulta pública passou a exigir
+`status: ACTIVE` junto ao `tenantId` da loja. Rascunhos não aparecem na vitrine;
+lojas sem produtos publicados exibem o estado vazio. O painel continua permitindo
+gerenciar rascunhos. Configurações da loja, upload e compra por WhatsApp permanecem
+pendentes. As referências anteriores a DRAFT descrevem o estado histórico.
+
+### Executar verificações no Docker
+
+Com `boxshop-web-dev` ativo e dependências instaladas, crie uma cópia temporária
+para evitar que o build altere o `.next` do servidor de desenvolvimento. O
+Turbopack exige dependências dentro da raiz de resolução; use cópia física,
+pois symlink externo falha e hardlink entre volumes não é suportado.
+Não copie `.env`; o container já fornece as variáveis de ambiente necessárias.
+
+```bash
+docker exec boxshop-web-dev sh -c '
+  validation_dir=$(mktemp -d /tmp/boxshop-checks.XXXXXX)
+  tar -C /app --exclude=./node_modules --exclude=./.next --exclude=./.git --exclude="./.env*" --exclude=./.tmp-stabilize -cf "$validation_dir/source.tar" . &&
+  tar -C "$validation_dir" -xf "$validation_dir/source.tar" &&
+  cp -a /app/node_modules "$validation_dir/node_modules" &&
+  cd "$validation_dir" &&
+  node --version &&
+  npm test &&
+  npm run lint &&
+  npx tsc --noEmit --incremental false &&
+  NODE_ENV=production npm run build
+'
+```
+
+Em WSL com integração indisponível, use `docker.exe` no lugar de `docker`.
+Falhas de rede (por exemplo no download de fontes), Docker ou aprovação de
+execução devem ser registradas separadamente; não equivalem a checks aprovados.
 
 ## Documentação oficial
 

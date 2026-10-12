@@ -1,16 +1,18 @@
 "use client";
 
+import type { Category } from "@prisma/client";
+import { errorMessage } from "@/lib/error-message";
 import { useState } from "react";
 import { Plus, Trash, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { createCategory, updateCategory, deleteCategory } from "@/lib/actions/categories";
 import { CategoryInput } from "@/lib/validations/category";
 
-export function CategoriesClient({ initialCategories }: { initialCategories: any[] }) {
+export function CategoriesClient({ initialCategories }: { initialCategories: Category[] }) {
   const [categories, setCategories] = useState(initialCategories);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -29,7 +31,7 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
     setIsOpen(true);
   };
 
-  const handleOpenEdit = (category: any) => {
+  const handleOpenEdit = (category: Category) => {
     setEditingId(category.id);
     setFormData({ name: category.name, slug: category.slug });
     setError("");
@@ -50,8 +52,8 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
         setCategories((prev) => [created, ...prev]);
       }
       setIsOpen(false);
-    } catch (err: any) {
-      setError(err.message || "Erro ao salvar categoria");
+    } catch (err: unknown) {
+      setError(errorMessage(err, "Erro ao salvar categoria"));
     } finally {
       setLoading(false);
     }
@@ -62,8 +64,8 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
     try {
       await deleteCategory(id);
       setCategories((prev) => prev.filter((c) => c.id !== id));
-    } catch (err: any) {
-      alert(err.message || "Erro ao excluir categoria");
+    } catch (err: unknown) {
+      alert(errorMessage(err, "Erro ao excluir categoria"));
     }
   };
 

@@ -42,7 +42,8 @@ export async function getProducts() {
  */
 export async function createProduct(data: ProductInput) {
   const session = await auth();
-  if (!session?.user?.tenantId) {
+  const tenantId = session?.user?.tenantId;
+  if (!tenantId) {
     throw new Error("Não autorizado ou Tenant não encontrado");
   }
 
@@ -55,7 +56,7 @@ export async function createProduct(data: ProductInput) {
   const existing = await prisma.product.findUnique({
     where: {
       tenantId_slug: {
-        tenantId: session.user.tenantId,
+        tenantId,
         slug: parsed.data.slug,
       },
     },
@@ -70,7 +71,7 @@ export async function createProduct(data: ProductInput) {
     const category = await prisma.category.findFirst({
       where: {
         id: parsed.data.categoryId,
-        tenantId: session.user.tenantId,
+        tenantId,
       },
     });
 
@@ -90,7 +91,7 @@ export async function createProduct(data: ProductInput) {
         status: parsed.data.status,
         sku: parsed.data.sku || undefined,
         categoryId: parsed.data.categoryId || undefined,
-        tenantId: session.user.tenantId,
+        tenantId,
         stock: parsed.data.stock,
         trackInventory: parsed.data.trackInventory,
       },

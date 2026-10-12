@@ -20,7 +20,7 @@ export default async function StorefrontPage({ params }: { params: Promise<{ dom
   }
 
   const products = await prisma.product.findMany({
-    where: { tenantId: tenant.id },
+    where: { tenantId: tenant.id, status: 'ACTIVE' },
     orderBy: { createdAt: 'desc' }
   })
 

@@ -1,3 +1,4 @@
+import type { ComponentProps } from "react";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ProductsClient } from "./products-client";
@@ -9,7 +10,7 @@ vi.mock("@/lib/actions/products", () => ({
   deleteProduct: vi.fn(),
 }));
 
-const product = {
+const product: ComponentProps<typeof ProductsClient>["initialProducts"][number] = {
   id: "product-1", name: "Camiseta", slug: "camiseta", price: 19.9,
   status: "DRAFT", stock: 0, trackInventory: true, categoryId: null,
   tenantId: "tenant-1", description: null, sku: null,
@@ -45,6 +46,45 @@ function submit() {
 }
 
 describe("preço base no formulário", () => {
+  it("mostra fallback e permite reenviar após exceção sem mensagem", async () => {
+    vi.mocked(createProduct).mockRejectedValueOnce(null);
+    openNew();
+    submit();
+    await screen.findByText("Erro ao salvar produto");
+    expect(screen.getByRole("button", { name: "Salvar Produto" })).toBeEnabled();
+    submit();
+    await waitFor(() => expect(createProduct).toHaveBeenCalledTimes(2));
+  });
+
+  it("gera combinações de variações preservando SKU, preço e estoque", async () => {
+    openNew();
+    const addType = (name: string, options: string) => {
+      fireEvent.change(screen.getByPlaceholderText("Nome (ex: Cor)"), { target: { value: name } });
+      fireEvent.change(screen.getByPlaceholderText("Opções separadas por vírgula (ex: Azul, Verde)"), { target: { value: options } });
+      fireEvent.click(screen.getByRole("button", { name: "Adicionar" }));
+    };
+    addType("Tamanho", "P, M");
+    addType("Cor", "Azul, Verde");
+    expect(screen.getByRole("row", { name: /^P - Azul/ })).toBeInTheDocument();
+    expect(screen.getByRole("row", { name: /^P - Verde/ })).toBeInTheDocument();
+    expect(screen.getByRole("row", { name: /^M - Azul/ })).toBeInTheDocument();
+    expect(screen.getByRole("row", { name: /^M - Verde/ })).toBeInTheDocument();
+    const row = screen.getByRole("row", { name: /^P - Azul/ });
+    fireEvent.change(within(row).getByPlaceholderText("SKU"), { target: { value: "CAM-P" } });
+    fireEvent.change(within(row).getByPlaceholderText("Preço R$"), { target: { value: "12.35" } });
+    fireEvent.change(within(row).getAllByRole("spinbutton")[1], { target: { value: "5" } });
+    const colorType = screen.getByText("Cor:").parentElement;
+    if (!colorType) throw new Error("Tipo de variação não encontrado");
+    fireEvent.click(within(colorType).getByRole("button"));
+    submit();
+    await waitFor(() => expect(createProduct).toHaveBeenCalledWith(expect.objectContaining({
+      variants: [
+        { sku: "CAM-P", price: 12.35, stock: 5, options: { Tamanho: "P" } },
+        { sku: "", price: null, stock: 0, options: { Tamanho: "M" } },
+      ],
+    })));
+  });
+
   it("permite limpar o preço sem salvar ou forçar zero", () => {
     openNew();
     const input = screen.getByLabelText("Preço Base (R$)");

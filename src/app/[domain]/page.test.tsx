@@ -3,6 +3,13 @@ import { render, screen } from '@testing-library/react'
 import StorefrontPage from './page'
 import { prisma } from '@/lib/prisma'
 import { notFound } from 'next/navigation'
+import { createElement } from 'react'
+import { productFixture, tenantFixture } from '@/test/fixtures'
+import type { Prisma } from '@prisma/client'
+
+vi.mock('next/image', () => ({
+  default: ({ src, alt }: { src: string; alt: string }) => createElement('img', { src, alt }),
+}))
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {
@@ -61,6 +68,8 @@ test('renderiza os produtos corretamente se existirem', async () => {
   
   vi.mocked(prisma.product.findMany).mockResolvedValueOnce([
     {
+      ...productFixture(),
+      status: 'ACTIVE',
       id: 'prod-1',
       name: 'Tênis Maneiro',
       description: 'Um tênis muito maneiro',
@@ -78,4 +87,46 @@ test('renderiza os produtos corretamente se existirem', async () => {
   expect(screen.getByText('Tênis Maneiro')).toBeDefined()
   expect(screen.getByText('Um tênis muito maneiro')).toBeDefined()
   expect(screen.getByText('R$ 199,90')).toBeDefined()
+  expect(screen.getByRole('img', { name: 'Tênis Maneiro' })).toHaveAttribute('src', expect.stringContaining('https://images.unsplash.com/'))
+})
+
+test.each([
+  { label: 'catálogo misto', onlyDrafts: false },
+  { label: 'somente rascunhos', onlyDrafts: true },
+])('exibe apenas produtos publicados da loja: $label', async ({ onlyDrafts }) => {
+  vi.mocked(prisma.tenant.findUnique).mockResolvedValueOnce(tenantFixture())
+  const products = [
+    productFixture({ id: 'draft', name: 'Rascunho privado' }),
+    productFixture({ id: 'other', name: 'Produto de outra loja', tenantId: 'tenant-2', status: 'ACTIVE' }),
+    ...onlyDrafts ? [] : [
+      productFixture({ id: 'active-old', name: 'Publicado antigo', status: 'ACTIVE', createdAt: new Date('2026-10-01') }),
+      productFixture({ id: 'active-new', name: 'Publicado recente', status: 'ACTIVE', createdAt: new Date('2026-10-12') }),
+    ],
+  ]
+  vi.mocked(prisma.product.findMany).mockImplementationOnce((args) => {
+    const visibleProducts = products.filter(product =>
+      (!args?.where?.tenantId || product.tenantId === args.where.tenantId) &&
+      (!args?.where?.status || product.status === args.where.status)
+    ).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+    return Object.defineProperty(Promise.resolve(visibleProducts), Symbol.toStringTag, {
+      value: 'PrismaPromise',
+    }) as Prisma.PrismaPromise<typeof products>
+  })
+
+  render(await StorefrontPage({ params: Promise.resolve({ domain: 'loja.localhost:3000' }) }))
+
+  expect(prisma.tenant.findUnique).toHaveBeenCalledWith({ where: { domain: 'loja' } })
+  expect(prisma.product.findMany).toHaveBeenCalledWith({
+    where: { tenantId: 'tenant-1', status: 'ACTIVE' },
+    orderBy: { createdAt: 'desc' },
+  })
+  expect(screen.queryByText('Rascunho privado')).not.toBeInTheDocument()
+  expect(screen.queryByText('Produto de outra loja')).not.toBeInTheDocument()
+  if (onlyDrafts) {
+    expect(screen.getByText('Nenhum produto ainda')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Comprar' })).not.toBeInTheDocument()
+  } else {
+    expect(screen.getAllByRole('heading', { level: 3 }).map(heading => heading.textContent))
+      .toEqual(['Publicado recente', 'Publicado antigo'])
+  }
 })

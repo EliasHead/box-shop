@@ -1,7 +1,8 @@
+import { productFixture, sessionFixture } from "@/test/fixtures";
 import { expect, test, vi, beforeEach } from "vitest";
 import type { ProductInput } from "@/lib/validations/product";
 import type { Session } from "next-auth";
-import { getProducts, createProduct, updateProduct, deleteProduct } from "./products";
+import { createProduct, updateProduct } from "./products";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 
@@ -57,6 +58,37 @@ const priceInput: ProductInput = {
 // Select the no-argument session overload rather than the middleware overload.
 const sessionAuth = vi.mocked(auth as () => Promise<Session | null>);
 
+test.each([null, undefined, ""])("criação rejeita sessão sem loja (%s) antes de consultar ou escrever", async (tenantId) => {
+  sessionAuth.mockResolvedValueOnce({
+    user: { id: "user-1", role: "OWNER", tenantId },
+    expires: "2099-01-01T00:00:00Z",
+  });
+  await expect(createProduct(priceInput)).rejects.toThrow("Não autorizado");
+  expect(prisma.product.findUnique).not.toHaveBeenCalled();
+  expect(prisma.category.findFirst).not.toHaveBeenCalled();
+  expect(prisma.$transaction).not.toHaveBeenCalled();
+  expect(txMock.product.create).not.toHaveBeenCalled();
+});
+
+test("criação rejeita categoria de outra loja antes de escrever", async () => {
+  sessionAuth.mockResolvedValueOnce({
+    user: { id: "user-1", role: "OWNER", tenantId: "tenant-1" },
+    expires: "2099-01-01T00:00:00Z",
+  });
+  vi.mocked(prisma.product.findUnique).mockResolvedValueOnce(null);
+  vi.mocked(prisma.category.findFirst).mockResolvedValueOnce(null);
+  await expect(createProduct({ ...priceInput, categoryId: "other-store-category" }))
+    .rejects.toThrow("Categoria não encontrada ou não pertence ao seu Tenant");
+  expect(prisma.product.findUnique).toHaveBeenCalledWith({
+    where: { tenantId_slug: { tenantId: "tenant-1", slug: "camiseta" } },
+  });
+  expect(prisma.category.findFirst).toHaveBeenCalledWith({
+    where: { id: "other-store-category", tenantId: "tenant-1" },
+  });
+  expect(prisma.$transaction).not.toHaveBeenCalled();
+  expect(txMock.product.create).not.toHaveBeenCalled();
+});
+
 test("criação e edição rejeitam operação sem sessão sem escrever", async () => {
   sessionAuth.mockResolvedValue(null);
   await expect(createProduct(priceInput)).rejects.toThrow("Não autorizado");
@@ -81,8 +113,8 @@ test("edição rejeita produto de outra loja sem escrever", async () => {
 });
 
 test("createProduct falha se o slug já existir no tenant", async () => {
-  vi.mocked(auth).mockResolvedValueOnce({ user: { tenantId: "tenant-1" } } as any);
-  vi.mocked(prisma.product.findUnique).mockResolvedValueOnce({ id: "existing" } as any);
+  sessionAuth.mockResolvedValueOnce(sessionFixture());
+  vi.mocked(prisma.product.findUnique).mockResolvedValueOnce(productFixture({ id: "existing" }));
 
   await expect(
     createProduct({ 
@@ -99,7 +131,7 @@ test("createProduct falha se o slug já existir no tenant", async () => {
 });
 
 test("createProduct falha se categoryId for fornecido mas a categoria não existir", async () => {
-  vi.mocked(auth).mockResolvedValueOnce({ user: { tenantId: "tenant-1" } } as any);
+  sessionAuth.mockResolvedValueOnce(sessionFixture());
   vi.mocked(prisma.product.findUnique).mockResolvedValueOnce(null);
   vi.mocked(prisma.category.findFirst).mockResolvedValueOnce(null); // category not found
 
@@ -119,11 +151,11 @@ test("createProduct falha se categoryId for fornecido mas a categoria não exist
 });
 
 test("createProduct cria o produto base com sucesso", async () => {
-  vi.mocked(auth).mockResolvedValueOnce({ user: { tenantId: "tenant-1" } } as any);
+  sessionAuth.mockResolvedValueOnce(sessionFixture());
   vi.mocked(prisma.product.findUnique).mockResolvedValueOnce(null);
   
-  const mockCreated = { id: "prod-1", name: "Camiseta", slug: "camiseta", price: 10, tenantId: "tenant-1" };
-  txMock.product.create.mockResolvedValueOnce(mockCreated as any);
+  const mockCreated = productFixture();
+  txMock.product.create.mockResolvedValueOnce(mockCreated);
 
   const result = await createProduct({ 
     name: "Camiseta", 
@@ -153,11 +185,11 @@ test("createProduct cria o produto base com sucesso", async () => {
 });
 
 test("createProduct cria produto com variações e estoque atômico", async () => {
-  vi.mocked(auth).mockResolvedValueOnce({ user: { tenantId: "tenant-1" } } as any);
+  sessionAuth.mockResolvedValueOnce(sessionFixture());
   vi.mocked(prisma.product.findUnique).mockResolvedValueOnce(null);
 
   const mockCreatedProduct = { id: "prod-vars", name: "Tênis", slug: "tenis", price: 100, tenantId: "tenant-1" };
-  txMock.product.create.mockResolvedValueOnce(mockCreatedProduct as any);
+  txMock.product.create.mockResolvedValueOnce(mockCreatedProduct);
   
   const mockTypeRecord = {
     id: "type-1",
@@ -167,8 +199,8 @@ test("createProduct cria produto com variações e estoque atômico", async () =
       { id: "opt-2", value: "40" }
     ]
   };
-  txMock.productVariationType.create.mockResolvedValueOnce(mockTypeRecord as any);
-  txMock.productVariant.create.mockResolvedValue({ id: "var-1" } as any);
+  txMock.productVariationType.create.mockResolvedValueOnce(mockTypeRecord);
+  txMock.productVariant.create.mockResolvedValue({ id: "var-1" });
 
   const result = await createProduct({
     name: "Tênis",

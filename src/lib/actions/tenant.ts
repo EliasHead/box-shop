@@ -52,8 +52,8 @@ export async function createTenant(data: { name: string; domain: string }) {
     })
 
     return { success: true, tenantId: result.id, role: 'OWNER' }
-  } catch (error: any) {
-    if (error.message === 'Este endereço já está em uso') {
+  } catch (error: unknown) {
+    if (error instanceof Error && error.message === 'Este endereço já está em uso') {
       return { error: error.message }
     }
     console.error('Error creating tenant:', error)
