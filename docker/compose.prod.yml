@@ -6,10 +6,13 @@ services:
       context: ..
       dockerfile: Dockerfile
     container_name: boxshop-web-prod
+    volumes:
+      - ${PRODUCT_IMAGES_HOST_DIR:?Defina PRODUCT_IMAGES_HOST_DIR}:/var/lib/boxshop/product-images
     ports:
       - '3000:3000'
     environment:
       - NODE_ENV=production
+      - PRODUCT_IMAGES_DIR=/var/lib/boxshop/product-images
       - DATABASE_URL=postgresql://admin:admin_password@db:5432/boxshop_prod
     depends_on:
       db:

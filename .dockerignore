@@ -7,3 +7,6 @@ node_modules
 .claude
 docker
 *.md
+
+# Mídia persistente dos produtos
+/data/product-images/

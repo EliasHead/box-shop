@@ -49,3 +49,6 @@ next-env.d.ts
 !/.agents/skills/
 /.agents/skills/*
 !/.agents/skills/openspec-*/
+
+# Mídia persistente dos produtos
+/data/product-images/

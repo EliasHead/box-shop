@@ -12,7 +12,7 @@ export function categoryFixture(overrides: Partial<Category> = {}): Category {
 }
 
 export function productFixture(overrides: Partial<Product> = {}): Product {
-  return { id: "prod-1", name: "Camiseta", slug: "camiseta", description: null, price: 10, status: "DRAFT", sku: null, categoryId: null, tenantId: "tenant-1", stock: 0, trackInventory: true, ...timestamps, ...overrides };
+  return { id: "prod-1", name: "Camiseta", slug: "camiseta", description: null, price: 10, status: "DRAFT", sku: null, imageKey: null, categoryId: null, tenantId: "tenant-1", stock: 0, trackInventory: true, ...timestamps, ...overrides };
 }
 
 export function tenantFixture(overrides: Partial<Tenant> = {}): Tenant {

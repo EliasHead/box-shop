@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { cleanupProductImage } from "@/lib/storage/image-cleanup";
 import { auth } from "@/auth";
 import { ProductInput, productSchema } from "@/lib/validations/product";
 
@@ -282,23 +283,16 @@ export async function updateProduct(id: string, data: ProductInput) {
  */
 export async function deleteProduct(id: string) {
   const session = await auth();
-  if (!session?.user?.tenantId) {
-    throw new Error("Não autorizado ou Tenant não encontrado");
-  }
-
-  // Verificar se pertence ao tenant
-  const existing = await prisma.product.findFirst({
-    where: { id, tenantId: session.user.tenantId },
+  if (!session?.user?.id) throw new Error("Não autorizado ou Tenant não encontrado");
+  const removed = await prisma.$transaction(async (tx) => {
+    const users = await tx.$queryRaw<Array<{ tenantId: string | null }>>`SELECT "tenantId" FROM "User" WHERE "id" = ${session.user.id} FOR SHARE`;
+    const tenantId = users[0]?.tenantId;
+    if (!tenantId) throw new Error("Não autorizado ou Tenant não encontrado");
+    // DELETE retorna a referência final mesmo que um upload termine durante a exclusão.
+    return tx.product.delete({ where: { id, tenantId } });
   });
-
-  if (!existing) {
-    throw new Error("Produto não encontrado ou você não tem permissão");
-  }
-
-  await prisma.product.delete({
-    where: { id },
-  });
-
-  revalidatePath("/app/products");
+  if (removed.imageKey) await cleanupProductImage(removed.imageKey);
+  revalidatePath("/app/dashboard/products");
+  revalidatePath("/[domain]", "page");
   return true;
 }

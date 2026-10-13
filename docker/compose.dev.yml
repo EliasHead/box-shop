@@ -10,10 +10,12 @@ services:
       # Mount um volume anônimo pro node_modules pra não ter conflito de OS (Linux container vs Host)
       - /app/node_modules
       - /app/.next
+      - ../data/product-images:/var/lib/boxshop/product-images
     ports:
       - '3000:3000'
     environment:
       - NODE_ENV=development
+      - PRODUCT_IMAGES_DIR=/var/lib/boxshop/product-images
       - DATABASE_URL=postgresql://admin:admin_password@db:5432/boxshop_dev
       - NEXT_PUBLIC_ROOT_DOMAIN=localhost:3000
     env_file:

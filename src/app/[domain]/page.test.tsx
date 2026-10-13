@@ -76,6 +76,7 @@ test('renderiza os produtos corretamente se existirem', async () => {
       status: 'ACTIVE',
       id: 'prod-1',
       name: 'Tênis Maneiro',
+      imageKey: 'tenant-1/prod-1/12345678-1234-4234-8234-123456789abc.webp',
       description: 'Um tênis muito maneiro',
       price: 199.90,
       tenantId: 'tenant-1',
@@ -91,7 +92,7 @@ test('renderiza os produtos corretamente se existirem', async () => {
   expect(screen.getByText('Tênis Maneiro')).toBeDefined()
   expect(screen.getByText('Um tênis muito maneiro')).toBeDefined()
   expect(screen.getByText('R$ 199,90')).toBeDefined()
-  expect(screen.getByRole('img', { name: 'Tênis Maneiro' })).toHaveAttribute('src', expect.stringContaining('https://images.unsplash.com/'))
+  expect(screen.getByRole('img', { name: 'Tênis Maneiro' })).toHaveAttribute('src', '/api/product-images/prod-1/12345678-1234-4234-8234-123456789abc.webp')
 })
 
 test.each([

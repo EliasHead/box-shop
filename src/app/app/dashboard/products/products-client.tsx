@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { createProduct, updateProduct, deleteProduct } from "@/lib/actions/products";
 import { productSchema, type ProductInput } from "@/lib/validations/product";
+import { ProductImageDialog } from "./product-image-dialog";
 import { parseBasePrice } from "./product-price";
 
 type ProductFormData = Omit<ProductInput, "price" | "status"> & { price: string; status: string };
@@ -40,6 +41,7 @@ function cartesian<T>(args: T[][]) {
 }
 
 export function ProductsClient({ initialProducts, categories }: { initialProducts: ProductRow[]; categories: Category[] }) {
+  const [imageProductId, setImageProductId] = useState<string | null>(null);
   const [products, setProducts] = useState(initialProducts);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -222,11 +224,17 @@ export function ProductsClient({ initialProducts, categories }: { initialProduct
         </Button>
       </div>
 
+      {imageProductId && products.find((p) => p.id === imageProductId) && (
+        <ProductImageDialog product={products.find((p) => p.id === imageProductId)!}
+          onClose={() => setImageProductId(null)}
+          onSaved={(imageKey) => setProducts((current) => current.map((p) => p.id === imageProductId ? { ...p, imageKey } : p))} />
+      )}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingId ? "Editar Produto" : "Novo Produto"}</DialogTitle>
           </DialogHeader>
+          {!editingId && <p className="text-sm text-muted-foreground">Salve o produto primeiro. Depois, use o botão Foto na lista para adicionar a imagem.</p>}
           <form onSubmit={handleSave} className="flex flex-col gap-6 mt-4">
             {error && <div className="text-sm text-red-500 font-medium p-3 bg-red-50 rounded-md">{error}</div>}
 
@@ -498,10 +506,11 @@ export function ProductsClient({ initialProducts, categories }: { initialProduct
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(product)}>
+                        <Button variant="outline" size="sm" onClick={() => setImageProductId(product.id)}>Foto</Button>
+                        <Button variant="ghost" size="icon" aria-label={`Editar ${product.name}`} onClick={() => handleOpenEdit(product)}>
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDelete(product.id)}>
+                        <Button variant="ghost" size="icon" aria-label={`Excluir ${product.name}`} onClick={() => handleDelete(product.id)}>
                           <Trash className="h-4 w-4 text-red-500" />
                         </Button>
                       </div>

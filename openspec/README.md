@@ -136,3 +136,14 @@ execução devem ser registradas separadamente; não equivalem a checks aprovado
 - [Primeiros passos](https://github.com/Fission-AI/OpenSpec/blob/main/docs/getting-started.md)
 - [Adoção em projetos existentes](https://github.com/Fission-AI/OpenSpec/blob/main/docs/existing-projects.md)
 - [Referência do CLI](https://github.com/Fission-AI/OpenSpec/blob/main/docs/cli.md)
+
+## Fotos de produtos — 12/10/2026
+
+A mudança `add-product-image` implementou foto principal opcional para produtos
+salvos, conversão e validação de JPEG/PNG/WebP, armazenamento persistente local
+ou NFS montado, leitura autorizada e reconciliação manual. O painel oferece o
+botão Foto; a vitrine usa imagem própria com estado neutro quando ausente.
+150 testes passaram, além de 3 testes de integração com PostgreSQL; lint,
+TypeScript e build aprovados. Persistência confirmada após recriar o container
+e por GET público real sem sessão. NFS remoto permanece sem validação real;
+configuração e smoke test operacional estão no README principal.

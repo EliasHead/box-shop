@@ -13,7 +13,7 @@ vi.mock("@/lib/actions/products", () => ({
 const product: ComponentProps<typeof ProductsClient>["initialProducts"][number] = {
   id: "product-1", name: "Camiseta", slug: "camiseta", price: 19.9,
   status: "DRAFT", stock: 0, trackInventory: true, categoryId: null,
-  tenantId: "tenant-1", description: null, sku: null,
+  tenantId: "tenant-1", description: null, sku: null, imageKey: null,
   createdAt: new Date("2026-10-11"), updatedAt: new Date("2026-10-11"),
   variationTypes: [], variants: [],
 };
@@ -35,7 +35,7 @@ function openNew() {
 function openEdit() {
   render(<ProductsClient initialProducts={[product]} categories={[]} />);
   const row = screen.getByRole("row", { name: /Camiseta/ });
-  fireEvent.click(within(row).getAllByRole("button")[0]);
+  fireEvent.click(within(row).getByRole("button", { name: "Editar Camiseta" }));
 }
 
 function submit() {

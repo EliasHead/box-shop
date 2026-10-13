@@ -1,4 +1,4 @@
-import Image from "next/image"
+import { ProductImage } from "@/components/product-image"
 import { Button } from "@/components/ui/button"
 import { MessageCircle, Store } from "lucide-react"
 import { prisma } from "@/lib/prisma"
@@ -47,16 +47,7 @@ export default async function StorefrontPage({ params }: { params: Promise<{ dom
                   key={product.id} 
                   className="group relative flex flex-col bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.1)]"
                 >
-                  {/* Product Image Placeholder */}
-                  <div className="relative aspect-square w-full overflow-hidden bg-slate-100">
-                    <Image 
-                      src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&h=600&fit=crop&q=80" 
-                      alt={product.name}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-500"
-                      sizes="(max-width: 768px) 100vw, 400px"
-                    />
-                  </div>
+                  <ProductImage productId={product.id} imageKey={product.imageKey} name={product.name} />
 
                   {/* Product Info */}
                   <div className="flex flex-col p-5 gap-2">
